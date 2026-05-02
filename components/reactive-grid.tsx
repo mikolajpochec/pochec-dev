@@ -6,8 +6,8 @@ import * as THREE from "three";
 export default function ReactiveGrid({
 	width = 30,
 	height = 30,
-	rows = 20,
-	columns = 20,
+	rows = 25,
+	columns = 25,
 	pointSize = 0.1,
 }) {
 	const mountRef = useRef<HTMLDivElement>(null);
@@ -27,7 +27,7 @@ export default function ReactiveGrid({
 
 		const scene = new THREE.Scene();
 		const camera = new THREE.PerspectiveCamera(55, W / H);
-		camera.position.set(width / 2, height / 2, (width + height) / 2);
+		camera.position.set(width / 2, height * 0.25, (width + height) / 2);
 		camera.lookAt(width / 2, height / 2, 0);
 
 		const geometry = new THREE.SphereGeometry(pointSize, 16, 16);
@@ -41,6 +41,19 @@ export default function ReactiveGrid({
 		let animId: number;
 		const start = performance.now();
 
+		const distance = function(
+			x1: number,
+			y1: number,
+			z1: number,
+			x2: number,
+			y2: number,
+			z2: number,
+		) {
+			return Math.sqrt(
+				Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2) + Math.pow(z1 - z2, 2),
+			);
+		};
+
 		const animate = function() {
 			animId = requestAnimationFrame(animate);
 			const t = (performance.now() - start) / 1000;
@@ -49,10 +62,17 @@ export default function ReactiveGrid({
 					const idx = r * columns + c;
 					const x = (c / columns) * width;
 					const y = (r / rows) * height;
-					const z = Math.sin(t);
+					const z = Math.sin(x * 0.5 + t);
+
+					// Calculate lightness based on distance to center
+					let l =
+						1 -
+						distance(x, y, z, width / 2, height / 2, 0) /
+						(Math.max(height, width) / 2);
+
 					matrix.setPosition(x, y, z);
 					mesh.setMatrixAt(idx, matrix);
-					color.setRGB(1, 1, 1);
+					color.setHSL(1, 1, l / 2);
 					mesh.setColorAt(idx, color);
 				}
 			}
@@ -83,7 +103,7 @@ export default function ReactiveGrid({
 		};
 
 		animate();
-	});
+	}, []);
 
 	return <div ref={mountRef} className="w-full h-full" />;
 }
