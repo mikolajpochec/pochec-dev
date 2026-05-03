@@ -37,8 +37,8 @@ export default function TypewriterHeader({
 	}, [underscore]);
 
 	return (
-		<p className={`${geist.className} text-4xl`}>
-			<span> {"$"} </span>
+		<p className={`${geist.className} text-4xl w-fit`}>
+			<span> $ </span>
 			<span className="text-gray-400">hello, i'm</span>{" "}
 			<span className="font-bold">{text}</span>
 			<span className="text-gray-400">{underscore}</span>{" "}

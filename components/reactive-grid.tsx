@@ -6,8 +6,8 @@ import * as THREE from "three";
 export default function ReactiveGrid({
 	width = 30,
 	height = 30,
-	rows = 50,
-	columns = 50,
+	rows = 75,
+	columns = 75,
 	pointSize = 0.075,
 	cursorRepelForce = 1,
 }) {
@@ -28,16 +28,14 @@ export default function ReactiveGrid({
 
 		const scene = new THREE.Scene();
 		const camera = new THREE.PerspectiveCamera(55, W / H);
-		//camera.position.set(width / 2, 0, (width + height) / 2);
 		camera.position.set(width, 0, (width + height) / 2);
 		camera.lookAt(width / 2, height / 2, 0);
 
-		const geometry = new THREE.SphereGeometry(pointSize, 16, 16);
+		const geometry = new THREE.SphereGeometry(pointSize, 4, 4);
 		const material = new THREE.MeshBasicMaterial();
 		const mesh = new THREE.InstancedMesh(geometry, material, columns * rows);
 		scene.add(mesh);
 
-		// Raycasting to plane logic
 		const raycaster = new THREE.Raycaster();
 		const mouse = new THREE.Vector2();
 		const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
@@ -51,7 +49,14 @@ export default function ReactiveGrid({
 			raycaster.setFromCamera(mouse, camera);
 			hasHit = !!raycaster.ray.intersectPlane(groundPlane, hitPoint);
 		};
-		div.addEventListener("mousemove", onMouseMove);
+
+		const onResize = () => {
+			const w = div.clientWidth;
+			const h = div.clientHeight;
+			camera.aspect = w / h;
+			camera.updateProjectionMatrix();
+			renderer.setSize(w, h);
+		};
 
 		const matrix = new THREE.Matrix4();
 		const color = new THREE.Color();
@@ -72,6 +77,20 @@ export default function ReactiveGrid({
 			);
 		};
 
+		const WAVE_MAX_LIFETIME = 2.5;
+		const GRID_DIAGONAL = Math.sqrt(width * width + height * height);
+		const WAVE_SPEED = GRID_DIAGONAL / WAVE_MAX_LIFETIME;
+		let clickWaves = [{ x: 0, y: 0, z: 0, t: -WAVE_MAX_LIFETIME }];
+
+		const onClick = () => {
+			const t = (performance.now() - start) / 1000;
+			clickWaves.push({ x: hitPoint.x, y: hitPoint.y, z: hitPoint.z, t });
+		};
+
+		window.addEventListener("mousemove", onMouseMove);
+		window.addEventListener("resize", onResize);
+		window.addEventListener("mousedown", onClick);
+
 		const animate = function() {
 			animId = requestAnimationFrame(animate);
 			const t = (performance.now() - start) / 1000;
@@ -83,15 +102,22 @@ export default function ReactiveGrid({
 					const distToCursor = Math.sqrt(
 						distance(x, y, 0, hitPoint.x, hitPoint.y, hitPoint.z),
 					);
-					let z = Math.sin(x * 0.5 + t) + distToCursor;
+					let z = Math.sin(x * 0.5 + t);
+					clickWaves = clickWaves.filter(
+						(wave) => t - wave.t <= WAVE_MAX_LIFETIME,
+					);
+					clickWaves.forEach((wave) => {
+						let distToOrigin = distance(x, y, z, wave.x, wave.y, wave.z);
+						let smooth = Math.sin(((t - wave.t) / WAVE_MAX_LIFETIME) * Math.PI);
+						let amplitude = smooth / Math.sqrt(distToOrigin);
+						z += amplitude * Math.sin(-distToOrigin + (t - wave.t) * 5);
+					});
 
-					// Repelling force
 					let dirX = x - hitPoint.x;
 					let dirY = y - hitPoint.y;
 					x += dirX * cursorRepelForce * Math.pow(10, -distToCursor / 2);
 					y += dirY * cursorRepelForce * Math.pow(10, -distToCursor / 2);
 
-					// Calculate opacity based on distance to center
 					let distanceToCenter = distance(x, y, z, width / 2, height / 2, 0);
 					let norm = Math.min(height, width) / 2;
 					let normDist = 1 - distanceToCenter / norm;
@@ -109,29 +135,20 @@ export default function ReactiveGrid({
 			mesh.instanceColor.needsUpdate = true;
 
 			renderer.render(scene, camera);
-
-			const onResize = () => {
-				const w = div.clientWidth;
-				const h = div.clientHeight;
-				camera.aspect = w / h;
-				camera.updateProjectionMatrix();
-				renderer.setSize(w, h);
-			};
-			window.addEventListener("resize", onResize);
-
-			// Clean up the component
-			return () => {
-				cancelAnimationFrame(animId);
-				window.removeEventListener("resize", onResize);
-				div.removeEventListener("mousemove", onMouseMove);
-				renderer.dispose();
-				geometry.dispose();
-				material.dispose();
-				div.removeChild(renderer.domElement);
-			};
 		};
 
 		animate();
+
+		return () => {
+			cancelAnimationFrame(animId);
+			window.removeEventListener("resize", onResize);
+			window.removeEventListener("mousemove", onMouseMove);
+			window.removeEventListener("mousedown", onClick);
+			renderer.dispose();
+			geometry.dispose();
+			material.dispose();
+			div.removeChild(renderer.domElement);
+		};
 	}, []);
 
 	return <div ref={mountRef} className="w-full h-full" />;
