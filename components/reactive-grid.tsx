@@ -8,7 +8,7 @@ export default function ReactiveGrid({
 	height = 30,
 	rows = 40,
 	columns = 40,
-	pointSize = 0.1,
+	pointSize = 0.075,
 	cursorRepelForce = 1,
 }) {
 	const mountRef = useRef<HTMLDivElement>(null);
@@ -28,7 +28,8 @@ export default function ReactiveGrid({
 
 		const scene = new THREE.Scene();
 		const camera = new THREE.PerspectiveCamera(55, W / H);
-		camera.position.set(width / 2, height * 0.25, (width + height) / 2);
+		//camera.position.set(width / 2, 0, (width + height) / 2);
+		camera.position.set(width, 0, (width + height) / 2);
 		camera.lookAt(width / 2, height / 2, 0);
 
 		const geometry = new THREE.SphereGeometry(pointSize, 16, 16);
@@ -93,11 +94,13 @@ export default function ReactiveGrid({
 					// Calculate lightness based on distance to center
 					let distanceToCenter = distance(x, y, z, width / 2, height / 2, 0);
 					let norm = Math.min(height, width) / 2;
-					let l = 1 - distanceToCenter / norm;
+					let normDist = 1 - distanceToCenter / norm;
+					let l = Math.max(normDist, 0);
+					l *= l;
 
 					matrix.setPosition(x, y, z);
 					mesh.setMatrixAt(idx, matrix);
-					color.setHSL(Math.sin(t / 10), 1, l / 2);
+					color.setHSL(Math.sin(t / 10), 0, l);
 					mesh.setColorAt(idx, color);
 				}
 			}
