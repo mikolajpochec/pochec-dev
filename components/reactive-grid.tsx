@@ -6,8 +6,8 @@ import * as THREE from "three";
 export default function ReactiveGrid({
 	width = 30,
 	height = 30,
-	rows = 75,
-	columns = 75,
+	rows = 50,
+	columns = 50,
 	pointSize = 0.075,
 	cursorRepelForce = 1,
 }) {
