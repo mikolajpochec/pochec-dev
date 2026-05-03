@@ -6,8 +6,8 @@ import * as THREE from "three";
 export default function ReactiveGrid({
 	width = 30,
 	height = 30,
-	rows = 40,
-	columns = 40,
+	rows = 50,
+	columns = 50,
 	pointSize = 0.075,
 	cursorRepelForce = 1,
 }) {
@@ -19,10 +19,10 @@ export default function ReactiveGrid({
 		const W = div.clientWidth;
 		const H = div.clientHeight;
 
-		const renderer = new THREE.WebGLRenderer({ antialias: true });
+		const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 		renderer.setPixelRatio(window.devicePixelRatio);
 		renderer.setSize(W, H);
-		renderer.setClearColor(0x000000);
+		renderer.setClearColor(0x000000, 0);
 
 		div.appendChild(renderer.domElement);
 
@@ -91,7 +91,7 @@ export default function ReactiveGrid({
 					x += dirX * cursorRepelForce * Math.pow(10, -distToCursor / 2);
 					y += dirY * cursorRepelForce * Math.pow(10, -distToCursor / 2);
 
-					// Calculate lightness based on distance to center
+					// Calculate opacity based on distance to center
 					let distanceToCenter = distance(x, y, z, width / 2, height / 2, 0);
 					let norm = Math.min(height, width) / 2;
 					let normDist = 1 - distanceToCenter / norm;
