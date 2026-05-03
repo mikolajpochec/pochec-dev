@@ -6,9 +6,10 @@ import * as THREE from "three";
 export default function ReactiveGrid({
 	width = 30,
 	height = 30,
-	rows = 25,
-	columns = 25,
+	rows = 40,
+	columns = 40,
 	pointSize = 0.1,
+	cursorRepelForce = 1,
 }) {
 	const mountRef = useRef<HTMLDivElement>(null);
 
@@ -35,6 +36,22 @@ export default function ReactiveGrid({
 		const mesh = new THREE.InstancedMesh(geometry, material, columns * rows);
 		scene.add(mesh);
 
+		// Raycasting to plane logic
+		const raycaster = new THREE.Raycaster();
+		const mouse = new THREE.Vector2();
+		const groundPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+		const hitPoint = new THREE.Vector3();
+		let hasHit = false;
+
+		const onMouseMove = (e: MouseEvent) => {
+			const rect = div.getBoundingClientRect();
+			mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+			mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+			raycaster.setFromCamera(mouse, camera);
+			hasHit = !!raycaster.ray.intersectPlane(groundPlane, hitPoint);
+		};
+		div.addEventListener("mousemove", onMouseMove);
+
 		const matrix = new THREE.Matrix4();
 		const color = new THREE.Color();
 
@@ -60,19 +77,27 @@ export default function ReactiveGrid({
 			for (let r = 0; r < rows; r++) {
 				for (let c = 0; c < columns; c++) {
 					const idx = r * columns + c;
-					const x = (c / columns) * width;
-					const y = (r / rows) * height;
-					const z = Math.sin(x * 0.5 + t);
+					let x = (c / columns) * width;
+					let y = (r / rows) * height;
+					const distToCursor = Math.sqrt(
+						distance(x, y, 0, hitPoint.x, hitPoint.y, hitPoint.z),
+					);
+					let z = Math.sin(x * 0.5 + t) + distToCursor;
+
+					// Repelling force
+					let dirX = x - hitPoint.x;
+					let dirY = y - hitPoint.y;
+					x += dirX * cursorRepelForce * Math.pow(10, -distToCursor / 2);
+					y += dirY * cursorRepelForce * Math.pow(10, -distToCursor / 2);
 
 					// Calculate lightness based on distance to center
-					let l =
-						1 -
-						distance(x, y, z, width / 2, height / 2, 0) /
-						(Math.max(height, width) / 2);
+					let distanceToCenter = distance(x, y, z, width / 2, height / 2, 0);
+					let norm = Math.min(height, width) / 2;
+					let l = 1 - distanceToCenter / norm;
 
 					matrix.setPosition(x, y, z);
 					mesh.setMatrixAt(idx, matrix);
-					color.setHSL(1, 1, l / 2);
+					color.setHSL(Math.sin(t / 10), 1, l / 2);
 					mesh.setColorAt(idx, color);
 				}
 			}
@@ -95,6 +120,7 @@ export default function ReactiveGrid({
 			return () => {
 				cancelAnimationFrame(animId);
 				window.removeEventListener("resize", onResize);
+				div.removeEventListener("mousemove", onMouseMove);
 				renderer.dispose();
 				geometry.dispose();
 				material.dispose();
