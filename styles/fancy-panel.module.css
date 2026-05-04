@@ -1,0 +1,21 @@
+.panel {
+  --r: 300;
+  --glow-color: white;
+
+  overflow: hidden;
+
+  transform: rotateX(calc(var(--rx) * 1deg)) rotateY(calc(var(--ry) * 1deg));
+
+  transition:
+    transform 0.35s cubic-bezier(0.23, 1, 0.32, 1),
+    background 0.04s linear;
+
+  background:
+    radial-gradient(
+      calc(var(--r) * 1px) circle at calc(var(--x) * 1px) calc(var(--y) * 1px),
+      color-mix(in srgb, var(--glow-color) 18%, transparent) 0%,
+      color-mix(in srgb, var(--glow-color) 6%, transparent) 40%,
+      transparent 70%
+    ),
+    transparent;
+}
