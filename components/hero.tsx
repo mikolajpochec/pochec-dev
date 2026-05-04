@@ -1,6 +1,6 @@
 import TypewriterHeader from "../components/typewriter-header";
 import ReactiveGrid from "../components/reactive-grid";
-import FancyPanel from "../components/fancy-panel";
+import Button from "../components/button";
 
 export default function Hero() {
 	return (
@@ -12,9 +12,7 @@ export default function Hero() {
 					based in Cracow, Poland. I'm into software development, cybersecurity
 					and low level programming.
 				</p>
-				<FancyPanel glowColor="#00ffff" className="p-4 w-fit" maxTilt={12}>
-					Lorem ipsum dolor sit amet
-				</FancyPanel>
+				<Button color="indigo" text="Read more..." />
 			</div>
 			<div className="absolute top-0 right-0 h-full w-1/2 invert dark:invert-0 z-1">
 				<ReactiveGrid cursorRepelForce={2.5} />
