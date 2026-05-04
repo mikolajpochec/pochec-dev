@@ -7,6 +7,7 @@ export default function FancyPanel({
 	glowColor = "white",
 	className = "",
 	children,
+	...props
 }: {
 	maxTilt?: number;
 	glowColor?: string;
@@ -36,6 +37,7 @@ export default function FancyPanel({
 
 	return (
 		<div
+			{...props}
 			className={`${styles.panel} ${className}`}
 			style={{ "--glow-color": glowColor } as React.CSSProperties}
 			onMouseMove={handleMouseMove}
