@@ -12,8 +12,7 @@ export default function FancyPanel({
 	maxTilt?: number;
 	glowColor?: string;
 	className?: string;
-	children: React.ReactNode;
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
 	const handleMouseMove = (e: any) => {
 		const el = e.currentTarget;
 		const r = el.getBoundingClientRect();
